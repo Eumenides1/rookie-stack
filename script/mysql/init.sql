@@ -1,0 +1,1 @@
+create database rookie_stack;
