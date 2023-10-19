@@ -14,8 +14,17 @@ import (
 )
 
 func main() {
-	server := gin.Default()
+	db := initDB()
+	server := initWebServer()
 
+	u := initUser(db)
+	u.RegisterRoutes(server)
+	
+	server.Run(":8080")
+}
+
+func initWebServer() *gin.Engine {
+	server := gin.Default()
 	server.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 		AllowHeaders:     []string{"Content-Type"},
@@ -27,7 +36,18 @@ func main() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+	return server
+}
 
+func initUser(db *gorm.DB) *web.UserHandler {
+	ud := dao.NewUserDao(db)
+	repo := repository.NewUserRepository(ud)
+	svc := service.NewUserService(repo)
+	u := web.NewUserHandler(svc)
+	return u
+}
+
+func initDB() *gorm.DB {
 	db, err := gorm.Open(mysql.Open("root:root@tcp(9.135.13.39:13316)/rookie_stack"))
 	if err != nil {
 		panic(err)
@@ -36,10 +56,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	ud := dao.NewUserDao(db)
-	repo := repository.NewUserRepository(ud)
-	svc := service.NewUserService(repo)
-	u := web.NewUserHandler(svc)
-	u.RegisterRoutes(server)
-	server.Run(":8080")
+	return db
 }
