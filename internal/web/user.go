@@ -1,7 +1,8 @@
 package web
 
 import (
-	"fmt"
+	"github.com/Eumenides/rookie-stack/internal/domain"
+	"github.com/Eumenides/rookie-stack/internal/service"
 	"net/http"
 
 	regexp "github.com/dlclark/regexp2"
@@ -15,12 +16,14 @@ const (
 )
 
 type UserHandler struct {
+	svc         *service.UserService
 	emailExp    *regexp.Regexp
 	passwordExp *regexp.Regexp
 }
 
-func NewUserHandler() *UserHandler {
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	return &UserHandler{
+		svc:         svc,
 		emailExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
 	}
@@ -74,9 +77,17 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "密码格式不正确，密码必须大于 8 位，且包含特殊字符与字母")
 		return
 	}
-	ctx.String(http.StatusOK, "注册成功")
-	fmt.Printf("%v", req)
 
+	err = u.svc.SignUp(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统异常")
+		return
+	}
+
+	ctx.String(http.StatusOK, "注册成功")
 }
 
 func (u *UserHandler) Login(ctx *gin.Context) {
