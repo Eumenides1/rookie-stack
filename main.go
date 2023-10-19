@@ -5,7 +5,10 @@ import (
 	"github.com/Eumenides/rookie-stack/internal/repository/dao"
 	"github.com/Eumenides/rookie-stack/internal/service"
 	"github.com/Eumenides/rookie-stack/internal/web"
+	"github.com/Eumenides/rookie-stack/internal/web/middleware"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -19,7 +22,7 @@ func main() {
 
 	u := initUser(db)
 	u.RegisterRoutes(server)
-	
+
 	server.Run(":8080")
 }
 
@@ -36,6 +39,9 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+	store := cookie.NewStore([]byte("secret"))
+	server.Use(sessions.Sessions("mysession", store))
+	server.Use(middleware.NewLoginMiddlewareBuilder().Build())
 	return server
 }
 

@@ -3,10 +3,10 @@ package web
 import (
 	"github.com/Eumenides/rookie-stack/internal/domain"
 	"github.com/Eumenides/rookie-stack/internal/service"
-	"net/http"
-
 	regexp "github.com/dlclark/regexp2"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 const (
@@ -103,7 +103,7 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	err := u.svc.Login(ctx, req.Email, req.Password)
+	user, err := u.svc.Login(ctx, req.Email, req.Password)
 	if err == service.ErrInvalidUserOrPassword {
 		ctx.String(http.StatusOK, "邮箱或密码错误")
 		return
@@ -113,6 +113,9 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
+	sess := sessions.Default(ctx)
+	sess.Set("userId", user.Id)
+	sess.Save()
 	ctx.String(http.StatusOK, "登录成功")
 	return
 }
